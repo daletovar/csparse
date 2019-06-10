@@ -4,7 +4,7 @@ from sparse.coo.common import linear_loc
 import sparse
 from functools import reduce
 from operator import mul
-from .convert2 import convert_prep,uncompress_dimension
+from .convert import convert_prep,uncompress_dimension
 from .csr_indexing import csr_row_array_col_array, csr_full_col_slices, csr_partial_col_slices
 from .csc_indexing import csc_row_array_col_array
 
