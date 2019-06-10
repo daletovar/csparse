@@ -52,7 +52,7 @@ def csr_full_col_slices(arr_data,arr_indices,arr_indptr,indptr,row):
 @numba.jit(nopython=True,nogil=True)
 def csr_partial_col_slices(arr_data,arr_indices,arr_indptr,indptr,row,col_start,col_stop):
     """
-    This algorithm is used for partial column slices with a step of one. It is only used for 2d arrays.
+    This algorithm is used for partial column slices with a step of one. It is currently only used for 2d arrays.
     """
     indices = []
     data = []
