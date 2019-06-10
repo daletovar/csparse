@@ -7,8 +7,8 @@ from sparse.utils import normalize_axis, equivalent, check_zero_fill_value, _zer
 import sparse
 import scipy.sparse as ss
 from .convert import compress_dimension, uncompress_dimension
-#from .indexing import getitem
-from .indexing2 import getitem
+from .indexing import getitem
+
 
 
 def _from_coo(x,format):
