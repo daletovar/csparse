@@ -15,9 +15,14 @@ def csr_row_array_col_array(arr_data,arr_indices,arr_indptr,indptr,row,col):
     ind_list = []
     for i,r in enumerate(row):
         inds = []
+        current_row = arr_indices[arr_indptr[r]:arr_indptr[r+1]]
+        if len(current_row) == 0:
+            indptr[i+1] = indptr[i]
+            continue
         for c in range(len(col)):
-            s = np.searchsorted(arr_indices[arr_indptr[r]:arr_indptr[r+1]],col[c]) + arr_indptr[r]
-            if arr_indices[s]==col[c]:
+            s = np.searchsorted(current_row,col[c]) 
+            if not (s >= current_row.size or current_row[s] != col[c]):
+                s += arr_indptr[r]
                 inds.append(s)
                 indices.append(c)
         ind_list.extend(inds)

@@ -39,6 +39,8 @@ def convert_to_2d(inds,shape,compressed_shape):
     rows = np.unique(rows)
     cols = np.unique(cols)
     
+    print('rows: ',rows)
+    print('cols: ',cols)
     return rows,cols
 
 
@@ -74,3 +76,23 @@ def uncompress_dimension(indptr,indices):
         uncompressed[np.arange(position,inds + position)] = i
         position += inds
     return uncompressed
+
+def compress_dimension(coords,indptr):
+    """converts an array of coordinates into an index pointer array"""
+    indptr[0] = 0
+    j = 0
+    if coords[0] == 0:
+        start = 1
+    else:
+        start = 0
+    for i in range(start,len(coords)):
+        if i == 0:
+            x = coords[0]
+        else:
+            x = coords[i]-coords[i-1]
+        if x > 0:
+            for k in range(x):
+                j+=1
+                indptr[j] = i
+    indptr[j+1:] = coords.shape[0]
+    return indptr

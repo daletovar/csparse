@@ -2,7 +2,9 @@ import numpy as np
 from sparse.slicing import normalize_index
 from sparse.coo.common import linear_loc
 import sparse
-from .convert import convert_to_2d,calculate_2d,compress_dimension,uncompress_dimension
+from functools import reduce
+from operator import mul
+from .convert2 import convert_prep,uncompress_dimension
 from .csr_indexing import csr_row_array_col_array, csr_full_col_slices, csr_partial_col_slices
 from .csc_indexing import csc_row_array_col_array
 
@@ -21,7 +23,8 @@ def getitem(x,key):
     key = list(normalize_index(key,x.shape))
         
     if all(isinstance(k, int) for k in key):
-        row, col = calculate_2d(key,x.shape,x.compressed_shape)
+        inds = np.ravel_multi_index(key,x.shape)
+        row, col = np.unravel_index(inds,x.compressed_shape)
         if x.format is 'CSR':
             item = np.searchsorted(x.indices[x.indptr[row]:x.indptr[row+1]],col) + x.indptr[row]
             if x.indices[item]==col:
@@ -68,9 +71,8 @@ def getitem(x,key):
     if len(x.shape)==2: # no need for coordinate conversion if x is already 2d
         rows,cols = np.array(key[0]),key[1]
     else:
-        rows,cols = convert_to_2d(key,x.shape,x.compressed_shape)
-        print('rows: ',rows)
-        print('cols: ',cols)
+        rows,cols = convert_prep(key,x.shape)
+        
     
     
     if x.format is 'CSR':
@@ -104,26 +106,21 @@ def manage_csr_output(x,arg,shape,row_inds,col_inds):
     row_size = np.prod(shape[:sl//2+1]) if sl%2==1 else np.prod(shape[:sl//2])
     col_size = np.prod(shape[sl//2+1:]) if sl%2==1 else np.prod(shape[sl//2:])
     midpoint = int(len(shape)//2)
-    #midpoint = midpoint + 1 if len(shape) % 2 == 1 else midpoint
     data,indices,indptr = arg
     
     if col_inds==0:
-        print('just column dimensions')
         uncompressed = uncompress_dimension(indptr,indices)
         indices = uncompressed%shape[-1]
         indptr = np.zeros(row_size+1,dtype=int)
         np.cumsum(np.bincount(uncompressed//shape[-1], minlength=row_size), out=indptr[1:])
         arg = (data,indices,indptr)
     elif row_inds==0:
-        print('just row dimensions')
         indptr = np.zeros(row_size+1,dtype=int)
         np.cumsum(np.bincount(indices//shape[-1], minlength=row_size), out=indptr[1:])
         indices = indices % shape[-1]
         arg = (data,indices,indptr)
     elif col_inds > row_inds: # r + c + c ##########################################
-        print('more column dimensions')
         uncompressed = indices//shape[-1]
-        print(midpoint)
         for i in range(1,len(indptr)-1):
             uncompressed[indptr[i]:] += shape[midpoint]
         indptr = np.zeros(row_size+1,dtype=int)
@@ -131,7 +128,6 @@ def manage_csr_output(x,arg,shape,row_inds,col_inds):
         indices = indices % shape[-1]
         arg = (data,indices,indptr)
     elif row_inds - col_inds > 1: # r + r + r + c
-        print('multiple row interactions')
         uncompressed = uncompress_dimension(indptr,indices) 
         indptr = np.zeros(row_size+1,dtype=int)
         np.cumsum(np.bincount(uncompressed // shape[midpoint], minlength=row_size), out=indptr[1:])
@@ -148,7 +144,6 @@ def manage_csc_output(x,arg,shape,row_inds,col_inds):
     row_size = np.prod(shape[:sl//2+1]) if sl%2==1 else np.prod(shape[:sl//2])
     col_size = np.prod(shape[sl//2+1:]) if sl%2==1 else np.prod(shape[sl//2:])
     midpoint = int(len(shape)//2)
-    #midpoint = midpoint + 1 if len(shape) % 2 == 1 else midpoint
     data,indices,indptr = arg
     if col_inds==0:
         order = np.argsort(indices%shape[-1])

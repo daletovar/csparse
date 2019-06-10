@@ -8,8 +8,12 @@ def csc_row_array_col_array(arr,row,col):
     ind_list = []
     for i,c in enumerate(col):
         inds = []
+        current_col = arr.indices[arr.indptr[c]:arr.indptr[c+1]]
+        if len(current_col) == 0:
+            indptr[i+1] = indptr[i]
+            continue
         for r in range(len(row)):
-            s = np.searchsorted(arr.indices[arr.indptr[c]:arr.indptr[c+1]],row[r]) + arr.indptr[c]
+            s = np.searchsorted(current_col,row[r]) + arr.indptr[c]
             if arr.indices[s]==row[r]:
                 inds.append(s)
                 indices.append(r)
